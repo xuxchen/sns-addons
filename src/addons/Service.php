@@ -360,7 +360,7 @@ class Service
                 $bootstrapArr[] = file_get_contents($bootstrapFile);
             }
         }
-        $addonsFile = ROOT_PATH . str_replace("/", DS, "public/assets/js/addons.js");
+        $addonsFile = ROOT_PATH . str_replace("/", DIRECTORY_SEPARATOR, "public/assets/js/addons.js");
         if ($handle = fopen($addonsFile, 'w')) {
             $tpl = <<<EOD
 define([], function () {
@@ -659,7 +659,7 @@ EOD;
             if ($config && isset($config['files']) && is_array($config['files'])) {
                 foreach ($config['files'] as $index => $item) {
                     //避免切换不同服务器后导致路径不一致
-                    $item = str_replace(['/', '\\'], DS, $item);
+                    $item = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $item);
                     //插件资源目录，无需重复复制
                     if (stripos($item, str_replace(ROOT_PATH, '', $destAssetsDir)) === 0) {
                         continue;
@@ -677,7 +677,7 @@ EOD;
             }
             //复制插件目录资源
             if (is_dir($destAssetsDir)) {
-                @copydirs($destAssetsDir, $addonDir . 'assets' . DS);
+                @copydirs($destAssetsDir, $addonDir . 'assets' . DIRECTORY_SEPARATOR);
             }
         }
 
@@ -858,7 +858,7 @@ EOD;
                     $filePath = $fileinfo->getPathName();
                     //如果名称为assets需要做特殊处理
                     if ($dirName === 'assets') {
-                        $path = str_replace(ROOT_PATH, '', $assetDir) . str_replace($addonDir . $dirName . DS, '', $filePath);
+                        $path = str_replace(ROOT_PATH, '', $assetDir) . str_replace($addonDir . $dirName . DIRECTORY_SEPARATOR, '', $filePath);
                     } else {
                         $path = str_replace($addonDir, '', $filePath);
                     }
@@ -885,7 +885,7 @@ EOD;
      */
     public static function getExtraAddonsFile()
     {
-        return CONF_PATH . 'extra' . DS . 'addons.php';
+        return CONF_PATH . 'extra' . DIRECTORY_SEPARATOR . 'addons.php';
     }
 
     /**
@@ -894,7 +894,7 @@ EOD;
      */
     public static function getBootstrapFile($name)
     {
-        return ADDON_PATH . $name . DS . 'bootstrap.js';
+        return ADDON_PATH . $name . DIRECTORY_SEPARATOR . 'bootstrap.js';
     }
 
     /**
@@ -902,7 +902,7 @@ EOD;
      */
     public static function getAddonDir($name)
     {
-        $dir = ADDON_PATH . $name . DS;
+        $dir = ADDON_PATH . $name . DIRECTORY_SEPARATOR;
         return $dir;
     }
 
@@ -911,7 +911,7 @@ EOD;
      */
     public static function getAddonsBackupDir()
     {
-        $dir = RUNTIME_PATH . 'addons' . DS;
+        $dir = RUNTIME_PATH . 'addons' . DIRECTORY_SEPARATOR;
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
@@ -925,7 +925,7 @@ EOD;
      */
     protected static function getSourceAssetsDir($name)
     {
-        return ADDON_PATH . $name . DS . 'assets' . DS;
+        return ADDON_PATH . $name . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR;
     }
 
     /**
@@ -935,7 +935,7 @@ EOD;
      */
     protected static function getDestAssetsDir($name)
     {
-        $assetsDir = ROOT_PATH . str_replace("/", DS, "public/assets/addons/{$name}/");
+        $assetsDir = ROOT_PATH . str_replace("/", DIRECTORY_SEPARATOR, "public/assets/addons/{$name}/");
         return $assetsDir;
     }
 

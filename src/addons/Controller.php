@@ -33,7 +33,7 @@ class Controller extends \think\Controller
         'view_path' => '',
         'view_suffix' => 'html',
         'strip_space' => true,
-        'view_depr' => DS,
+        'view_depr' => DIRECTORY_SEPARATOR,
         'tpl_begin' => '{',
         'tpl_end' => '}',
         'taglib_begin' => '{',
@@ -65,7 +65,7 @@ class Controller extends \think\Controller
         $view_path = $this->config['view_path'] ?: 'view';
 
         // 重置配置
-        Config::set('template.view_path', ADDON_PATH . $this->addon . DS . $view_path . DS);
+        Config::set('template.view_path', ADDON_PATH . $this->addon . DIRECTORY_SEPARATOR . $view_path . DIRECTORY_SEPARATOR);
 
         parent::__construct($request);
     }
@@ -87,9 +87,9 @@ class Controller extends \think\Controller
             $template = str_replace(['/', ':'], $depr, $template);
             if ('' == $template) {
                 // 如果模板文件名为空 按照默认规则定位
-                $template = str_replace('.', DS, $controller) . $depr . $this->action;
+                $template = str_replace('.', DIRECTORY_SEPARATOR, $controller) . $depr . $this->action;
             } elseif (false === strpos($template, $depr)) {
-                $template = str_replace('.', DS, $controller) . $depr . $template;
+                $template = str_replace('.', DIRECTORY_SEPARATOR, $controller) . $depr . $template;
             }
         }
         return parent::fetch($template, $vars, $replace, $config);
