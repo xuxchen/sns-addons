@@ -17,7 +17,7 @@ use think\Cache;
 use think\Route;
 
 // 插件目录
-define('ADDON_PATH', ROOT_PATH . 'addons' . DS);
+define('ADDON_PATH', root_path() . 'addons' . DIRECTORY_SEPARATOR);
 
 // 定义路由
 Route::any('addons/execute/:route', "\\think\\addons\\Route@execute");
