@@ -17,7 +17,7 @@ use think\Cache;
 use think\Route;
 
 // 插件目录
-define('ADDON_PATH', root_path() . 'addons' . DIRECTORY_SEPARATOR);
+define('ADDON_PATH', dirname(realpath($_SERVER['SCRIPT_FILENAME'])) . DIRECTORY_SEPARATOR . 'addons' . DIRECTORY_SEPARATOR);
 
 // 定义路由
 Route::any('addons/execute/:route', "\\think\\addons\\Route@execute");
@@ -161,9 +161,9 @@ function get_addon_config($name)
  * 插件显示内容里生成访问插件的url
  * @param $url
  * @param array $param
- * @return bool|string
  * @param bool|string $suffix 生成的URL后缀
  * @param bool|string $domain 域名
+ * @return bool|string
  */
 function addon_url($url, $param = [], $suffix = true, $domain = false)
 {
