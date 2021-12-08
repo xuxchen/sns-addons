@@ -11,23 +11,33 @@
             "email": "xux2004@qq.com"
         }
     ],
-    "minimum-stability": "dev",
     "require": {
-        "php": ">=7.0.0",
-        "nelexa/zip": "^3.3",
-        "symfony/var-exporter": "^4.4.13"
+        "php": ">=7.1.0",
+        "topthink/framework": "^6.0",
+        "topthink/think-view": "^1.0",
+        "topthink/think-helper": "^3.0.0"
     },
     "autoload": {
         "psr-4": {
             "think\\": "src/"
         },
         "files": [
-            "src/common.php"
+            "src/helper.php"
         ]
     },
     "extra": {
-        "think-config": {
-            "addons": "src/config.php"
+        "think": {
+            "services": [
+                "think\\addons\\Service"
+            ],
+            "config":{
+                "addons": "src/config.php"
+            }
         }
+    },
+    "scripts" : {
+        "post-install-cmd": [
+            "php think addons:config"
+        ]
     }
 }
