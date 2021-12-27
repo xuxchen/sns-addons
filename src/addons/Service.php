@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace think\addons;
 
 use fast\Http;
+use GuzzleHttp\Client;
 use think\facade\Db;
 use think\Exception;
 use think\facade\Env;
@@ -34,7 +35,7 @@ class Service extends \think\Service
         $this->addons_path = $this->getAddonsPath();
         // 加载系统语言包
         Lang::load([
-            $this->app->getRootPath() . '/vendor/xiaoyaor/think-addons/src/lang/zh-cn.php'
+            $this->app->getRootPath() . '/vendor/xuxchen/sns-addons/src/lang/zh-cn.php'
         ]);
         // 自动载入插件
         $this->autoload();
@@ -55,7 +56,7 @@ class Service extends \think\Service
             $route->rule("addons/:addon/[:controller]/[:action]", $execute)
                 ->middleware(Addons::class);
             // 自定义路由
-            $routes = (array) Config::get('addons.route', []);
+            $routes = (array)Config::get('addons.route', []);
             foreach ($routes as $key => $val) {
                 if (!$val) {
                     continue;
@@ -66,10 +67,10 @@ class Service extends \think\Service
                     foreach ($val['rule'] as $k => $rule) {
                         [$addon, $controller, $action] = explode('/', $rule);
                         $rules[$k] = [
-                            'addons'        => $addon,
-                            'controller'    => $controller,
-                            'action'        => $action,
-                            'indomain'      => 1,
+                            'addons' => $addon,
+                            'controller' => $controller,
+                            'action' => $action,
+                            'indomain' => 1,
                         ];
                     }
                     $route->domain($domain, function () use ($rules, $route, $execute) {
@@ -103,13 +104,13 @@ class Service extends \think\Service
     {
         $hooks = $this->app->isDebug() ? [] : Cache::get('hooks', []);
         if (empty($hooks)) {
-            $hooks = (array) Config::get('addons.hooks', []);
+            $hooks = (array)Config::get('addons.hooks', []);
             // 初始化钩子
             foreach ($hooks as $key => $values) {
                 if (is_string($values)) {
                     $values = explode(',', $values);
                 } else {
-                    $values = (array) $values;
+                    $values = (array)$values;
                 }
                 $hooks[$key] = array_filter(array_map(function ($v) use ($key) {
                     return [get_addons_class($v), Str::camel($key)];
@@ -181,12 +182,12 @@ class Service extends \think\Service
             // 找到插件入口文件
             if (strtolower($info['filename']) === $name) {
                 //插件关闭后不加载事件
-                $ini_file = $info['dirname'].DIRECTORY_SEPARATOR. 'info.ini';
+                $ini_file = $info['dirname'] . DIRECTORY_SEPARATOR . 'info.ini';
                 if (!is_file($ini_file)) {
                     continue;
                 }
                 $iniinfo = parse_ini_file($ini_file, true, INI_SCANNER_TYPED) ?: [];
-                if (!$iniinfo['state']) {
+                if (!$iniinfo['status']) {
                     continue;
                 }
                 // 读取出所有公共方法
@@ -246,8 +247,8 @@ class Service extends \think\Service
     /**
      * 远程下载插件
      *
-     * @param   string $name 插件名称
-     * @param   array $extend 扩展参数
+     * @param string $name 插件名称
+     * @param array $extend 扩展参数
      * @return  string
      * @throws  AddonException
      * @throws  Exception
@@ -261,36 +262,22 @@ class Service extends \think\Service
         $tmpFile = $addonTmpDir . $name . ".zip";
         $options = [
             CURLOPT_CONNECTTIMEOUT => 30,
-            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_TIMEOUT => 30,
             CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_HTTPHEADER     => [
+            CURLOPT_HTTPHEADER => [
                 'X-REQUESTED-WITH: XMLHttpRequest'
-            ]
+            ],
+            'sink' => $tmpFile
         ];
-        $ser=self::getServerUrl();
-        $ret = Http::sendRequest($ser . '/addon/download', array_merge(['name' => $name], $extend), 'GET', $options);
-        if ($ret['ret']) {
-            if (substr($ret['msg'], 0, 1) == '{') {
-                $json = (array)json_decode($ret['msg'], true);
-                //如果传回的是一个下载链接,则再次下载
-                if ($json['data'] && isset($json['data']['url'])) {
-                    array_pop($options);
-                    $ret = Http::sendRequest($json['data']['url'], [], 'GET', $options);
-                    if (!$ret['ret']) {
-                        //下载返回错误，抛出异常
-                        throw new AddonException($json['msg'], $json['code'], $json['data']);
-                    }
-                } else {
-                    //下载返回错误，抛出异常
-                    throw new AddonException($json['msg'], $json['code'], $json['data']);
-                }
-            }
-            if ($write = fopen($tmpFile, 'w')) {
-                fwrite($write, $ret['msg']);
-                fclose($write);
-                return $tmpFile;
-            }
-            throw new Exception("没有权限写入临时文件");
+//        $ser = self::getServerUrl();
+        $client = new Client();
+
+        $query = http_build_query(array_merge(['name' => $name], $extend));
+
+        $response = $client->request('GET', 'http://api.snsmanager.org' . '/addon/download?' . $query, $options);
+
+        if ($response->getStatusCode() === 200) {
+            return $tmpFile;
         }
         throw new Exception("无法下载远程文件");
     }
@@ -298,7 +285,7 @@ class Service extends \think\Service
     /**
      * 解压插件
      *
-     * @param   string $name 插件名称
+     * @param string $name 插件名称
      * @return  string
      * @throws  Exception
      */
@@ -355,7 +342,7 @@ class Service extends \think\Service
     /**
      * 检测插件是否完整
      *
-     * @param   string $name 插件名称
+     * @param string $name 插件名称
      * @return  boolean
      * @throws  Exception
      */
@@ -378,7 +365,7 @@ class Service extends \think\Service
     /**
      * 是否有冲突
      *
-     * @param   string $name 插件名称
+     * @param string $name 插件名称
      * @return  boolean
      * @throws  AddonException
      */
@@ -396,7 +383,7 @@ class Service extends \think\Service
     /**
      * 导入SQL
      *
-     * @param   string $name 插件名称
+     * @param string $name 插件名称
      * @return  boolean
      */
     public static function importsql($name)
@@ -438,7 +425,7 @@ class Service extends \think\Service
         $bootstrapArr = [];
         foreach ($addons as $name => $addon) {
             $bootstrapFile = ADDON_PATH . $name . DIRECTORY_SEPARATOR . 'bootstrap.js';
-            if ($addon['state'] && is_file($bootstrapFile)) {
+            if ($addon['status'] && is_file($bootstrapFile)) {
                 $bootstrapArr[] = file_get_contents($bootstrapFile);
             }
         }
@@ -477,9 +464,9 @@ EOD;
     /**
      * 安装插件
      *
-     * @param   string $name 插件名称
-     * @param   boolean $force 是否覆盖
-     * @param   array $extend 扩展参数
+     * @param string $name 插件名称
+     * @param boolean $force 是否覆盖
+     * @param array $extend 扩展参数
      * @return  boolean
      * @throws  Exception
      * @throws  AddonException
@@ -522,7 +509,7 @@ EOD;
         }
         foreach (self::getCheckDirs() as $k => $dir) {
             if (is_dir($addonDir . $dir)) {
-                $path=root_path() . $dir;
+                $path = root_path() . $dir;
                 copydirs($addonDir . $dir, $path);
             }
         }
@@ -530,11 +517,10 @@ EOD;
         try {
             // 默认启用该插件
             $info = get_addon_info($name);
-            if (!$info['state']) {
-                $info['state'] = 1;
+            if (!$info['status']) {
+                $info['status'] = 1;
                 set_addon_info($name, $info);
             }
-
             // 执行安装脚本
             $class = get_addon_class($name);
             if (class_exists($class)) {
@@ -544,7 +530,7 @@ EOD;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
-
+        
         // 导入
         Service::importsql($name);
 
@@ -556,8 +542,8 @@ EOD;
     /**
      * 卸载插件
      *
-     * @param   string $name
-     * @param   boolean $force 是否强制卸载
+     * @param string $name
+     * @param boolean $force 是否强制卸载
      * @return  boolean
      * @throws  Exception
      */
@@ -606,8 +592,8 @@ EOD;
 
     /**
      * 启用
-     * @param   string $name 插件名称
-     * @param   boolean $force 是否强制覆盖
+     * @param string $name 插件名称
+     * @param boolean $force 是否强制覆盖
      * @return  boolean
      */
     public static function enable($name, $force = false)
@@ -648,7 +634,7 @@ EOD;
         }
 
         $info = get_addon_info($name);
-        $info['state'] = 1;
+        $info['status'] = 1;
         unset($info['url']);
 
         set_addon_info($name, $info);
@@ -661,8 +647,8 @@ EOD;
     /**
      * 禁用
      *
-     * @param   string $name 插件名称
-     * @param   boolean $force 是否强制禁用
+     * @param string $name 插件名称
+     * @param boolean $force 是否强制禁用
      * @return  boolean
      * @throws  Exception
      */
@@ -688,7 +674,7 @@ EOD;
         }
 
         $info = get_addon_info($name);
-        $info['state'] = 0;
+        $info['status'] = 0;
         unset($info['url']);
 
         set_addon_info($name, $info);
@@ -715,13 +701,13 @@ EOD;
     /**
      * 升级插件
      *
-     * @param   string $name 插件名称
-     * @param   array $extend 扩展参数
+     * @param string $name 插件名称
+     * @param array $extend 扩展参数
      */
     public static function upgrade($name, $extend = [])
     {
         $info = get_addon_info($name);
-        if ($info['state']) {
+        if ($info['status']) {
             throw new Exception(__('Please disable addon first'));
         }
         $config = get_addon_config($name);
@@ -772,7 +758,7 @@ EOD;
     /**
      * 获取插件在全局的文件
      *
-     * @param   string $name 插件名称
+     * @param string $name 插件名称
      * @return  array
      */
     public static function getGlobalFiles($name, $onlyconflict = false)
@@ -814,7 +800,7 @@ EOD;
 
     /**
      * 获取插件源资源文件夹
-     * @param   string $name 插件名称
+     * @param string $name 插件名称
      * @return  string
      */
     protected static function getSourceAssetsDir($name)
@@ -824,7 +810,7 @@ EOD;
 
     /**
      * 获取插件目标资源文件夹
-     * @param   string $name 插件名称
+     * @param string $name 插件名称
      * @return  string
      */
     protected static function getDestAssetsDir($name)
@@ -842,7 +828,7 @@ EOD;
      */
     protected static function getServerUrl()
     {
-        return Config::get('easyadmin.api_url');
+        return Config::get('sns_api_url');
     }
 
     /**

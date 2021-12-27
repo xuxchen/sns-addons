@@ -114,7 +114,7 @@ abstract class Addons
                 return $temp_arr;
             }
             foreach ($temp_arr as $key => $value) {
-                $config[$value['name']] = $value['value'];
+                $config[$key] = $value['value'];
             }
             unset($temp_arr);
         }
@@ -196,7 +196,7 @@ abstract class Addons
     final public function checkInfo()
     {
         $info = $this->getInfo();
-        $info_check_keys = ['name', 'title', 'intro', 'author', 'version', 'state'];
+        $info_check_keys = ['name', 'title', 'intro', 'author', 'version', 'status'];
         foreach ($info_check_keys as $value) {
             if (!array_key_exists($value, $info)) {
                 return false;

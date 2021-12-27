@@ -57,7 +57,6 @@ if (!function_exists('hook')) {
     function hook($event, $params = null, bool $once = false)
     {
         $result = Event::trigger($event, $params, $once);
-
         return join('', $result);
     }
 }
@@ -129,7 +128,6 @@ if (!function_exists('get_addons_class')) {
             default:
                 $namespace = '\\addons\\' . $name . '\\'.$name;
         }
-
         return class_exists($namespace) ? $namespace : '';
     }
 }
@@ -456,7 +454,7 @@ if (!function_exists('get_addon_autoload_config')) {
         $addons = get_addon_list();
         $domain = [];
         foreach ($addons as $name => $addon) {
-            if (!$addon['state'])
+            if (!$addon['status'])
                 continue;
 
             // 读取出所有公共方法
@@ -522,5 +520,33 @@ if (!function_exists('parseName')) {
         }
 
         return strtolower(trim(preg_replace("/[A-Z]/", "_\\0", $name), "_"));
+    }
+}
+
+if (!function_exists('get_addon_tables')) {
+    /**
+     * 获取插件创建的表
+     * @param string $name 插件名
+     * @return array
+     */
+    function get_addon_tables($name)
+    {
+        $addonInfo = get_addon_info($name);
+        if (!$addonInfo) {
+            return [];
+        }
+        $regex = "/^CREATE\s+TABLE\s+(IF\s+NOT\s+EXISTS\s+)?`?([a-zA-Z_]+)`?/mi";
+        $sqlFile = ADDON_PATH . $name . DIRECTORY_SEPARATOR . 'install.sql';
+        $tables = [];
+        if (is_file($sqlFile)) {
+            preg_match_all($regex, file_get_contents($sqlFile), $matches);
+            if ($matches && isset($matches[2]) && $matches[2]) {
+                $prefix = config('database.prefix');
+                $tables = array_map(function ($item) use ($prefix) {
+                    return str_replace("__PREFIX__", $prefix, $item);
+                }, $matches[2]);
+            }
+        }
+        return $tables;
     }
 }

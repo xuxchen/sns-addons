@@ -26,6 +26,7 @@ use think\helper\Str;
 use think\facade\Event;
 use think\facade\Config;
 use think\exception\HttpException;
+use think\route\dispatch\Controller;
 
 class Route
 {
@@ -40,13 +41,18 @@ class Route
     {
         $app = app();
         $request = $app->request;
-
+  
         Event::trigger('addons_begin', $request);
 
-        if (empty($addon) || empty($controller) || empty($action)) {
+        if (empty($addon) ) {
             throw new HttpException(500, lang('addon can not be empty'));
         }
-
+        if(empty($controller)){
+            $controller = 'Index';
+        }
+        if(empty($action)){
+            $action = 'index';
+        }
         $request->addon = $addon;
         // 设置当前请求的控制器、操作
         $request->setController($controller)->setAction($action);
@@ -63,6 +69,7 @@ class Route
         // 监听addon_module_init
         Event::trigger('addon_module_init', $request);
         $class = get_addons_class($addon, 'controller', $controller);
+
         if (!$class) {
             throw new HttpException(404, lang('addon controller %s not found', [Str::studly($controller)]));
         }
